@@ -1,5 +1,9 @@
 # resizePNG
 
+<p align="center">
+  <img src="https://raw.githubusercontent.com/amoranio/resizePNG/refs/heads/main/images/resizePNG.png" alt="resizePNG screenshot" width="700">
+</p>
+
 A simple image resizer that runs entirely in your browser. No uploads, no servers, no tracking.
 
 ## Features
