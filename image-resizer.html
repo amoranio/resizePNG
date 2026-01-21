@@ -1,0 +1,676 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>resizePNG</title>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Space Grotesk', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: #000;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            color: #a0a0a0;
+        }
+
+        .app {
+            width: 100%;
+            max-width: 1200px;
+        }
+
+        h1 {
+            text-align: center;
+            margin-bottom: 30px;
+            font-weight: 700;
+            font-size: 2.2rem;
+            font-family: 'JetBrains Mono', monospace;
+            letter-spacing: -1px;
+        }
+
+        h1 .resize {
+            color: #fff;
+        }
+
+        h1 .png {
+            background: linear-gradient(135deg, #00ff88 0%, #00d4ff 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .main-layout {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 25px;
+            align-items: start;
+        }
+
+        @media (max-width: 900px) {
+            .main-layout {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .card {
+            background: #0a0a0a;
+            border-radius: 16px;
+            padding: 25px;
+            border: 1px solid #1a1a1a;
+        }
+
+        .upload-area {
+            border: 2px dashed #2a2a2a;
+            border-radius: 12px;
+            padding: 40px 20px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            background: #050505;
+        }
+
+        .upload-area:hover,
+        .upload-area.dragover {
+            border-color: #00ff88;
+            background: #0a0f0a;
+        }
+
+        .upload-area p {
+            color: #555;
+            font-size: 0.95rem;
+        }
+
+        .upload-area .browse {
+            color: #00ff88;
+            text-decoration: none;
+            border-bottom: 1px solid #00ff8855;
+            cursor: pointer;
+            transition: border-color 0.2s;
+        }
+
+        .upload-area .browse:hover {
+            border-color: #00ff88;
+        }
+
+        .upload-icon {
+            font-size: 2.5rem;
+            margin-bottom: 12px;
+        }
+
+        #file-input {
+            display: none;
+        }
+
+        .controls {
+            display: none;
+            margin-top: 20px;
+        }
+
+        .controls.visible {
+            display: block;
+        }
+
+        .info-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 0;
+            border-bottom: 1px solid #1a1a1a;
+            font-size: 0.85rem;
+        }
+
+        .info-row:last-of-type {
+            border-bottom: none;
+        }
+
+        .info-label {
+            color: #444;
+            text-transform: uppercase;
+            font-size: 0.7rem;
+            letter-spacing: 0.5px;
+        }
+
+        .info-value {
+            color: #888;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.85rem;
+        }
+
+        .section-title {
+            font-size: 0.65rem;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            color: #00ff88;
+            margin: 20px 0 12px;
+            font-weight: 600;
+        }
+
+        .dimension-inputs {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .input-group {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+
+        .input-group label {
+            font-size: 0.65rem;
+            color: #444;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .input-group input {
+            width: 100px;
+            padding: 10px 12px;
+            border: 1px solid #1a1a1a;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            background: #050505;
+            color: #fff;
+            font-family: 'JetBrains Mono', monospace;
+            transition: border-color 0.2s;
+        }
+
+        .input-group input:focus {
+            outline: none;
+            border-color: #00ff88;
+        }
+
+        .lock-btn {
+            background: #00ff88;
+            color: #000;
+            border: none;
+            width: 38px;
+            height: 38px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 1rem;
+            margin-top: 18px;
+            transition: all 0.2s;
+        }
+
+        .lock-btn:hover {
+            background: #00ffaa;
+            box-shadow: 0 0 20px rgba(0, 255, 136, 0.3);
+        }
+
+        .lock-btn.unlocked {
+            background: #1a1a1a;
+            color: #444;
+        }
+
+        .reset-btn {
+            background: none;
+            border: 1px solid #1a1a1a;
+            padding: 10px 16px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 0.75rem;
+            color: #444;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            transition: all 0.2s;
+            margin-top: 18px;
+        }
+
+        .reset-btn:hover {
+            border-color: #333;
+            color: #888;
+        }
+
+        .scale-warning {
+            background: rgba(255, 170, 0, 0.1);
+            border-left: 2px solid #ffaa00;
+            padding: 10px 12px;
+            margin-top: 15px;
+            border-radius: 0 8px 8px 0;
+            font-size: 0.75rem;
+            color: #ffaa00;
+            display: none;
+        }
+
+        .scale-warning.visible {
+            display: block;
+        }
+
+        /* Preview Section */
+        .preview-section {
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+        }
+
+        .preview-section h3 {
+            font-size: 0.65rem;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            color: #00d4ff;
+            margin-bottom: 15px;
+            font-weight: 600;
+        }
+
+        .preview-container {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            flex: 1;
+        }
+
+        .preview-box {
+            background: #050505;
+            border-radius: 10px;
+            padding: 12px;
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            border: 1px solid #111;
+        }
+
+        .preview-box h4 {
+            font-size: 0.65rem;
+            color: #333;
+            margin-bottom: 10px;
+            font-weight: 500;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .preview-box .image-wrapper {
+            background: repeating-conic-gradient(#111 0% 25%, #0a0a0a 0% 50%) 50% / 16px 16px;
+            border-radius: 8px;
+            padding: 10px;
+            min-height: 180px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex: 1;
+        }
+
+        .preview-box img {
+            max-width: 100%;
+            max-height: 200px;
+            object-fit: contain;
+            border-radius: 4px;
+            display: none;
+        }
+
+        .preview-box img.visible {
+            display: block;
+        }
+
+        .preview-box .placeholder {
+            color: #222;
+            font-size: 0.85rem;
+        }
+
+        .preview-box .dimensions {
+            margin-top: 10px;
+            font-size: 0.75rem;
+            color: #333;
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        .download-btn {
+            background: #00ff88;
+            color: #000;
+            border: none;
+            padding: 14px 30px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.2s;
+            margin-top: 20px;
+            width: 100%;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            font-family: 'Space Grotesk', sans-serif;
+        }
+
+        .download-btn:hover {
+            background: #00ffaa;
+            box-shadow: 0 0 30px rgba(0, 255, 136, 0.4);
+        }
+
+        .download-btn:disabled {
+            opacity: 0.3;
+            cursor: not-allowed;
+            box-shadow: none;
+        }
+
+        .empty-state {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100%;
+            min-height: 300px;
+            color: #222;
+        }
+
+        .empty-state-icon {
+            font-size: 3rem;
+            margin-bottom: 15px;
+            opacity: 0.3;
+        }
+
+        .preview-content {
+            display: none;
+        }
+
+        .preview-content.visible {
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+        }
+    </style>
+</head>
+<body>
+    <div class="app">
+        <h1><span class="resize">resize</span><span class="png">PNG</span></h1>
+
+        <div class="main-layout">
+            <!-- Left Panel: Upload & Controls -->
+            <div class="card">
+                <div class="upload-area" id="upload-area">
+                    <div class="upload-icon">📁</div>
+                    <p>Drag & drop an image here</p>
+                    <p>or <span class="browse">browse</span></p>
+                    <p style="font-size: 0.7rem; color: #333; margin-top: 10px; letter-spacing: 1px;">PNG, JPG, JPEG, WebP</p>
+                </div>
+                <input type="file" id="file-input" accept="image/png,image/jpeg,image/jpg,image/webp">
+
+                <div class="controls" id="controls">
+                    <div class="section-title">File Info</div>
+                    <div class="info-row">
+                        <span class="info-label">Name</span>
+                        <span class="info-value" id="file-name">-</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">Original Size</span>
+                        <span class="info-value" id="original-dims">-</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">File Size</span>
+                        <span class="info-value" id="file-size">-</span>
+                    </div>
+
+                    <div class="section-title">New Dimensions</div>
+                    <div class="dimension-inputs">
+                        <div class="input-group">
+                            <label for="width-input">Width (px)</label>
+                            <input type="number" id="width-input" min="1" max="10000" placeholder="Width">
+                        </div>
+                        <button class="lock-btn" id="lock-btn" title="Lock aspect ratio">🔗</button>
+                        <div class="input-group">
+                            <label for="height-input">Height (px)</label>
+                            <input type="number" id="height-input" min="1" max="10000" placeholder="Height">
+                        </div>
+                        <button class="reset-btn" id="reset-btn">Reset</button>
+                    </div>
+
+                    <div class="scale-warning" id="scale-warning">
+                        Upscaling may reduce image quality.
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right Panel: Preview -->
+            <div class="card preview-section">
+                <div class="empty-state" id="empty-state">
+                    <div class="empty-state-icon">🖼️</div>
+                    <p style="font-size: 0.8rem; letter-spacing: 0.5px;">Upload an image to preview</p>
+                </div>
+
+                <div class="preview-content" id="preview-content">
+                    <h3>Preview</h3>
+                    <div class="preview-container">
+                        <div class="preview-box">
+                            <h4>Original</h4>
+                            <div class="image-wrapper">
+                                <img id="original-preview" class="visible" alt="Original">
+                            </div>
+                            <div class="dimensions" id="original-preview-dims"></div>
+                        </div>
+                        <div class="preview-box">
+                            <h4>Resized</h4>
+                            <div class="image-wrapper">
+                                <img id="resized-preview" class="visible" alt="Resized">
+                            </div>
+                            <div class="dimensions" id="resized-preview-dims"></div>
+                        </div>
+                    </div>
+                    <button class="download-btn" id="download-btn">Download PNG</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // State
+        let originalImage = null;
+        let originalWidth = 0;
+        let originalHeight = 0;
+        let aspectRatio = 1;
+        let lockAspectRatio = true;
+
+        // DOM Elements
+        const uploadArea = document.getElementById('upload-area');
+        const fileInput = document.getElementById('file-input');
+        const controls = document.getElementById('controls');
+        const emptyState = document.getElementById('empty-state');
+        const previewContent = document.getElementById('preview-content');
+        const widthInput = document.getElementById('width-input');
+        const heightInput = document.getElementById('height-input');
+        const lockBtn = document.getElementById('lock-btn');
+        const resetBtn = document.getElementById('reset-btn');
+        const downloadBtn = document.getElementById('download-btn');
+        const originalPreview = document.getElementById('original-preview');
+        const resizedPreview = document.getElementById('resized-preview');
+        const scaleWarning = document.getElementById('scale-warning');
+
+        // Upload handlers
+        uploadArea.addEventListener('click', () => fileInput.click());
+
+        uploadArea.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            uploadArea.classList.add('dragover');
+        });
+
+        uploadArea.addEventListener('dragleave', () => {
+            uploadArea.classList.remove('dragover');
+        });
+
+        uploadArea.addEventListener('drop', (e) => {
+            e.preventDefault();
+            uploadArea.classList.remove('dragover');
+            const file = e.dataTransfer.files[0];
+            if (file && file.type.startsWith('image/')) {
+                handleFile(file);
+            }
+        });
+
+        fileInput.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (file) {
+                handleFile(file);
+            }
+        });
+
+        // Handle uploaded file
+        function handleFile(file) {
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                const img = new Image();
+                img.onload = () => {
+                    originalImage = img;
+                    originalWidth = img.width;
+                    originalHeight = img.height;
+                    aspectRatio = img.width / img.height;
+
+                    // Update UI
+                    document.getElementById('file-name').textContent = truncateFilename(file.name, 20);
+                    document.getElementById('original-dims').textContent = `${img.width} × ${img.height}`;
+                    document.getElementById('file-size').textContent = formatFileSize(file.size);
+
+                    widthInput.value = img.width;
+                    heightInput.value = img.height;
+
+                    originalPreview.src = e.target.result;
+                    document.getElementById('original-preview-dims').textContent = `${img.width} × ${img.height}`;
+
+                    controls.classList.add('visible');
+                    emptyState.style.display = 'none';
+                    previewContent.classList.add('visible');
+
+                    updateResizedPreview();
+                };
+                img.src = e.target.result;
+            };
+            reader.readAsDataURL(file);
+        }
+
+        // Truncate filename
+        function truncateFilename(name, maxLength) {
+            if (name.length <= maxLength) return name;
+            const ext = name.split('.').pop();
+            const base = name.substring(0, maxLength - ext.length - 4);
+            return `${base}...${ext}`;
+        }
+
+        // Format file size
+        function formatFileSize(bytes) {
+            if (bytes < 1024) return bytes + ' B';
+            if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
+            return (bytes / (1024 * 1024)).toFixed(2) + ' MB';
+        }
+
+        // Aspect ratio lock
+        lockBtn.addEventListener('click', () => {
+            lockAspectRatio = !lockAspectRatio;
+            lockBtn.classList.toggle('unlocked', !lockAspectRatio);
+            lockBtn.textContent = lockAspectRatio ? '🔗' : '🔓';
+        });
+
+        // Dimension inputs
+        widthInput.addEventListener('input', () => {
+            if (lockAspectRatio && originalImage) {
+                const newWidth = parseInt(widthInput.value) || 0;
+                heightInput.value = Math.round(newWidth / aspectRatio);
+            }
+            checkScaleWarning();
+            updateResizedPreview();
+        });
+
+        heightInput.addEventListener('input', () => {
+            if (lockAspectRatio && originalImage) {
+                const newHeight = parseInt(heightInput.value) || 0;
+                widthInput.value = Math.round(newHeight * aspectRatio);
+            }
+            checkScaleWarning();
+            updateResizedPreview();
+        });
+
+        // Reset button
+        resetBtn.addEventListener('click', () => {
+            if (originalImage) {
+                widthInput.value = originalWidth;
+                heightInput.value = originalHeight;
+                checkScaleWarning();
+                updateResizedPreview();
+            }
+        });
+
+        // Check if upscaling
+        function checkScaleWarning() {
+            const newWidth = parseInt(widthInput.value) || 0;
+            const newHeight = parseInt(heightInput.value) || 0;
+            const isUpscaling = newWidth > originalWidth || newHeight > originalHeight;
+            scaleWarning.classList.toggle('visible', isUpscaling);
+        }
+
+        // High-quality resize using canvas
+        function resizeImage(img, targetWidth, targetHeight) {
+            const canvas = document.createElement('canvas');
+            const ctx = canvas.getContext('2d');
+
+            let currentWidth = img.width;
+            let currentHeight = img.height;
+            let currentSource = img;
+
+            // Step down gradually for better quality when downscaling
+            while (currentWidth > targetWidth * 2 || currentHeight > targetHeight * 2) {
+                const stepCanvas = document.createElement('canvas');
+                const stepCtx = stepCanvas.getContext('2d');
+
+                currentWidth = Math.max(Math.floor(currentWidth / 2), targetWidth);
+                currentHeight = Math.max(Math.floor(currentHeight / 2), targetHeight);
+
+                stepCanvas.width = currentWidth;
+                stepCanvas.height = currentHeight;
+
+                stepCtx.imageSmoothingEnabled = true;
+                stepCtx.imageSmoothingQuality = 'high';
+                stepCtx.drawImage(currentSource, 0, 0, currentWidth, currentHeight);
+
+                currentSource = stepCanvas;
+            }
+
+            // Final resize
+            canvas.width = targetWidth;
+            canvas.height = targetHeight;
+            ctx.imageSmoothingEnabled = true;
+            ctx.imageSmoothingQuality = 'high';
+            ctx.drawImage(currentSource, 0, 0, targetWidth, targetHeight);
+
+            return canvas;
+        }
+
+        // Update resized preview
+        function updateResizedPreview() {
+            if (!originalImage) return;
+
+            const newWidth = parseInt(widthInput.value) || originalWidth;
+            const newHeight = parseInt(heightInput.value) || originalHeight;
+
+            if (newWidth < 1 || newHeight < 1 || newWidth > 10000 || newHeight > 10000) {
+                return;
+            }
+
+            const canvas = resizeImage(originalImage, newWidth, newHeight);
+            resizedPreview.src = canvas.toDataURL('image/png');
+            document.getElementById('resized-preview-dims').textContent = `${newWidth} × ${newHeight}`;
+        }
+
+        // Download
+        downloadBtn.addEventListener('click', () => {
+            if (!originalImage) return;
+
+            const newWidth = parseInt(widthInput.value) || originalWidth;
+            const newHeight = parseInt(heightInput.value) || originalHeight;
+
+            const canvas = resizeImage(originalImage, newWidth, newHeight);
+
+            const link = document.createElement('a');
+            link.download = `resized_${newWidth}x${newHeight}.png`;
+            link.href = canvas.toDataURL('image/png');
+            link.click();
+        });
+    </script>
+</body>
+</html>
